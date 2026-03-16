@@ -2,17 +2,14 @@
 
 import { useFormStatus } from "react-dom";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
-
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
 import {
   Command,
   CommandInput,
@@ -20,38 +17,21 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
-type Facial = {
-  id: number;
-  name: string;
-};
-
-type Option = {
-  value: string;
-  label: string;
-};
-
-const inputStyle =
-  "h-11 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-200 transition-all";
+type Facial = { id: number; name: string };
+type Option = { value: string; label: string };
 
 const customerTypeOptions: Option[] = [
   { value: "External Client", label: "External Client" },
   { value: "ZEP", label: "ZEP" },
 ];
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+// Shared input class — matches the cream/white card style
+const inputClass =
+  "w-full h-12 px-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#1D4130] focus:ring-2 focus:ring-[#1D4130]/10 focus:outline-none transition-all duration-150";
 
-  return (
-    <Button
-      type="submit"
-      disabled={pending}
-      className="h-11 px-6 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium"
-    >
-      {pending ? "Saving..." : "Save Treatment"}
-    </Button>
-  );
-}
+// ─── Searchable Select ──────────────────────────────────────────────────────
 
 function SearchableSelect({
   label,
@@ -60,7 +40,7 @@ function SearchableSelect({
   setValue,
   options,
   optional,
-  placeholder = "Select option",
+  placeholder = "Pilih opsi",
 }: {
   label: string;
   name: string;
@@ -70,39 +50,67 @@ function SearchableSelect({
   optional?: boolean;
   placeholder?: string;
 }) {
+  const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label} {optional && <span className="text-gray-400">(optional)</span>}
-      </label>
+      <div className="flex items-center gap-2 mb-2">
+        <label className="text-xs font-bold uppercase tracking-widest text-gray-500">
+          {label}
+        </label>
+        {optional && (
+          <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+            opsional
+          </span>
+        )}
+      </div>
 
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
+          <button
             type="button"
-            variant="outline"
-            className="w-full h-11 px-3 justify-start border-gray-300 text-sm font-normal"
+            className={`${inputClass} flex items-center justify-between text-left ${
+              !selected ? "text-gray-400" : "text-gray-900"
+            }`}
           >
-            {selected ? selected.label : placeholder}
-          </Button>
+            <span className="truncate">{selected ? selected.label : placeholder}</span>
+            <ChevronDownIcon
+              className={`h-4 w-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            />
+          </button>
         </PopoverTrigger>
 
-        <PopoverContent className="p-0 w-[350px]">
+        <PopoverContent
+          className="p-0 rounded-2xl border border-gray-100 shadow-xl overflow-hidden"
+          style={{ width: "var(--radix-popover-trigger-width)" }}
+          align="start"
+        >
           <Command>
-            <CommandInput placeholder="Search..." />
-
-            <CommandEmpty>No result found.</CommandEmpty>
-
-            <CommandGroup className="max-h-64 overflow-auto">
+            <div className="px-3 pt-3 pb-1">
+              <CommandInput
+                placeholder="Cari..."
+                className="h-9 text-sm border border-gray-200 rounded-xl px-3 focus:border-[#1D4130] focus:ring-0"
+              />
+            </div>
+            <CommandEmpty className="py-4 text-center text-sm text-gray-400">
+              Tidak ditemukan.
+            </CommandEmpty>
+            <CommandGroup className="max-h-52 overflow-auto p-1.5">
               {options.map((opt) => (
                 <CommandItem
                   key={opt.value}
                   value={opt.label}
-                  onSelect={() => setValue(opt.value)}
+                  onSelect={() => {
+                    setValue(opt.value);
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm cursor-pointer text-gray-700 data-[selected=true]:bg-[#F4F3ED]"
                 >
-                  {opt.label}
+                  <span>{opt.label}</span>
+                  {value === opt.value && (
+                    <CheckIcon className="h-4 w-4 text-[#1D4130]" />
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -115,6 +123,34 @@ function SearchableSelect({
   );
 }
 
+// ─── Submit Button ──────────────────────────────────────────────────────────
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="flex-1 h-12 rounded-2xl bg-[#1D4130] hover:bg-[#153023] active:scale-[0.98] text-[#F4F3ED] text-sm font-bold transition-all duration-150 disabled:opacity-60 shadow-md"
+    >
+      {pending ? (
+        <span className="flex items-center justify-center gap-2">
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          Menyimpan...
+        </span>
+      ) : (
+        "Simpan Treatment"
+      )}
+    </button>
+  );
+}
+
+// ─── Main Form ──────────────────────────────────────────────────────────────
+
 export function FormEntry({
   action,
   facials,
@@ -123,7 +159,6 @@ export function FormEntry({
   facials: Facial[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
-
   const [customerType, setCustomerType] = useState("");
   const [facialType, setFacialType] = useState("");
   const [nextTreatment, setNextTreatment] = useState("");
@@ -136,110 +171,127 @@ export function FormEntry({
   async function handleSubmit(formData: FormData) {
     try {
       await action(formData);
-
-      toast.success("Treatment recorded");
-
+      toast.success("Treatment tersimpan!", {
+        description: "Data customer berhasil dicatat.",
+      });
       formRef.current?.reset();
       setCustomerType("");
       setFacialType("");
       setNextTreatment("");
     } catch {
-      toast.error("Failed to save treatment");
+      toast.error("Gagal menyimpan", {
+        description: "Terjadi kesalahan. Coba lagi.",
+      });
     }
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Customer Treatment Form
-        </h1>
+    <main className="min-h-screen bg-[#183528] px-4 pt-8 pb-28 max-w-lg mx-auto font-[family-name:var(--font-geist-sans)]">
 
-        <p className="text-sm text-gray-500 mt-1">
-          Record a new customer treatment
+      {/* Header */}
+      <div className="mb-7">
+        <p className="text-xs text-[#F4F3ED]/60 font-medium mb-1 uppercase tracking-widest">
+          Input Data
+        </p>
+        <h1 className="text-2xl font-bold text-[#F4F3ED]">
+          Catat Treatment
+        </h1>
+        <p className="text-sm text-[#F4F3ED]/60 mt-1">
+          Isi data treatment customer dengan lengkap.
         </p>
       </div>
 
-      <form ref={formRef} action={handleSubmit} className="space-y-6 max-w-xl">
-        {/* Order Number */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Order number
-          </label>
+      {/* Form card */}
+      <div className="bg-[#F4F3ED] rounded-[2rem] px-6 py-7 shadow-xl space-y-5">
+        <form ref={formRef} action={handleSubmit} className="space-y-5">
 
-          <Input
-            name="orderNo"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            placeholder="10293"
-            required
-            className={inputStyle}
-            autoFocus
+          {/* Order number */}
+          <FormField label="No. Order">
+            <Input
+              name="orderNo"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="Contoh: 10293"
+              required
+              autoFocus
+              className={inputClass}
+            />
+          </FormField>
+
+          {/* Customer name */}
+          <FormField label="Nama Customer">
+            <Input
+              name="customerName"
+              placeholder="Nama lengkap customer"
+              required
+              className={inputClass}
+            />
+          </FormField>
+
+          {/* Customer type */}
+          <SearchableSelect
+            label="Tipe Customer"
+            name="customerType"
+            value={customerType}
+            setValue={setCustomerType}
+            options={customerTypeOptions}
+            placeholder="Pilih tipe customer"
           />
-        </div>
 
-        {/* Customer Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Customer name
-          </label>
-
-          <Input
-            name="customerName"
-            placeholder="Full name"
-            required
-            className={inputStyle}
+          {/* Treatment */}
+          <SearchableSelect
+            label="Treatment"
+            name="facialTypeId"
+            value={facialType}
+            setValue={setFacialType}
+            options={facialOptions}
+            placeholder="Pilih facial treatment"
           />
-        </div>
 
-        {/* Customer Type */}
-        <SearchableSelect
-          label="Customer Type"
-          name="customerType"
-          value={customerType}
-          setValue={setCustomerType}
-          options={customerTypeOptions}
-          placeholder="Select customer type"
-        />
+          {/* Next Treatment */}
+          <SearchableSelect
+            label="Next Treatment"
+            name="nextTreatmentId"
+            value={nextTreatment}
+            setValue={setNextTreatment}
+            options={facialOptions}
+            optional
+            placeholder="Pilih treatment berikutnya"
+          />
 
-        {/* Treatment */}
-        <SearchableSelect
-          label="Treatment"
-          name="facialTypeId"
-          value={facialType}
-          setValue={setFacialType}
-          options={facialOptions}
-          placeholder="Select treatment"
-        />
-
-        {/* Next Treatment */}
-        <SearchableSelect
-          label="Next Treatment"
-          name="nextTreatmentId"
-          value={nextTreatment}
-          setValue={setNextTreatment}
-          options={facialOptions}
-          optional
-          placeholder="Select next treatment"
-        />
-
-        {/* Actions */}
-        <div className="flex items-center gap-3 pt-4">
-          <SubmitButton />
-
-          <Link href="/recap">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 px-6 border-gray-300"
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-2">
+            <SubmitButton />
+            <Link
+              href="/rekap"
+              className="h-12 px-5 rounded-2xl border-2 border-[#1D4130]/20 bg-white hover:bg-gray-50 active:scale-[0.98] text-[#1D4130] text-sm font-bold transition-all duration-150 flex items-center justify-center"
             >
-              View Records
-            </Button>
-          </Link>
-        </div>
-      </form>
+              Lihat Rekap
+            </Link>
+          </div>
+        </form>
+      </div>
+
+    </main>
+  );
+}
+
+// ─── FormField wrapper ──────────────────────────────────────────────────────
+
+function FormField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+        {label}
+      </label>
+      {children}
     </div>
   );
 }
