@@ -12,42 +12,49 @@ import { Plus } from "lucide-react";
 const navItems = [
   { href: "/",           label: "Dashboard", icon: DashboardSquare01Icon },
   { href: "/recap",      label: "Rekap",     icon: File02Icon },
-  { href: "/settings", label: "Pengaturan",icon: Setting07Icon },
+  { href: "/settings",   label: "Pengaturan",icon: Setting07Icon },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <div className="fixed bottom-5 left-0 right-0 z-50 flex items-center justify-center gap-3 px-5 pointer-events-none">
+    <div className="fixed bottom-6 left-0 right-0 z-50 flex items-center justify-center gap-3 px-4 pointer-events-none">
 
-      {/* Pill group */}
-      <nav className="pointer-events-auto flex items-center gap-1 px-2 py-2 rounded-full bg-white/10 backdrop-blur-2xl border border-white/15 shadow-2xl">
+      {/* Pill group - Solid Cream Color (Tidak Transparan) */}
+      <nav className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full bg-[#F4F3ED] border border-white/60 shadow-xl">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-full text-[10px] font-semibold transition-all duration-200 ${
+              // Transisi halus saat label muncul/hilang
+              className={`flex items-center justify-center gap-1.5 rounded-full transition-all duration-300 ease-in-out overflow-hidden ${
                 active
-                  ? "bg-white/20 text-white"
-                  : "text-white/50 hover:text-white/80"
+                  ? "bg-[#1D4130] text-[#F4F3ED] px-4 py-2.5 shadow-md" // Aktif: Background Hijau Tua
+                  : "text-gray-400 hover:text-gray-800 px-3 py-2.5"     // Inaktif: Teks abu-abu
               }`}
             >
-              <Icon size={20} strokeWidth={active ? 2 : 1.5} />
-              <span>{label}</span>
+              <Icon size={18} />
+              
+              {/* Teks hanya muncul di menu yang aktif (Bikin Navigasi Ramping!) */}
+              {active && (
+                <span className="text-[11px] font-bold tracking-wide whitespace-nowrap">
+                  {label}
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Floating + button */}
+      {/* Floating + button - Dikecilkan ukurannya (Sleek) dan Warna Dibalik */}
       <Link
         href="/form"
-        className="pointer-events-auto w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-2xl hover:bg-gray-100 active:scale-95 transition-all duration-150 flex-shrink-0"
+        className="pointer-events-auto w-12 h-12 rounded-full bg-[#1D4130] flex items-center justify-center shadow-xl border border-[#183528] hover:bg-[#153023] active:scale-95 transition-all duration-150 flex-shrink-0"
       >
-        <Plus className="h-6 w-6 text-[#183528]" strokeWidth={2.5} />
+        <Plus className="h-5 w-5 text-[#F4F3ED]" strokeWidth={2.5} />
       </Link>
 
     </div>
