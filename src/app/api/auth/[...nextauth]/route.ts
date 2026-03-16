@@ -15,9 +15,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.username || !credentials?.password) return null;
 
         const [user] = await db
           .select()
@@ -37,7 +35,7 @@ export const authOptions: NextAuthOptions = {
         return {
           id: String(user.id),
           name: user.name,
-          email: user.username, // NextAuth expects email field; we use username
+          email: user.username,
         };
       },
     }),
@@ -51,7 +49,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = user.id;       // ← simpan userId ke JWT
         token.name = user.name;
       }
       return token;
@@ -59,6 +57,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.name = token.name as string;
+        (session.user as { id?: string }).id = token.id as string; // ← expose ke session
       }
       return session;
     },
