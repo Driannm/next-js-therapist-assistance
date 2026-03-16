@@ -1,65 +1,127 @@
-import Image from "next/image";
+// src/app/page.tsx
+import { db } from "@/db";
+import { treatments, facialTypes, monthlyTargets, offDays } from "@/db/schema";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { desc, gte, and, eq, sql } from "drizzle-orm";
+import { DashboardClient } from "@/components/DashboardClient";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const userId = Number(session.user.id);
+  const now = new Date();
+
+  const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
+  const startOfWeek  = new Date(now); startOfWeek.setDate(now.getDate() - 6); startOfWeek.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [
+    todayTreatments,
+    weekTreatments,
+    monthTreatments,
+    recentTreatments,
+    allFacialTypes,
+    topFacialToday,
+    monthTarget,
+    userOffDays,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(treatments)
+      .where(and(eq(treatments.userId, userId), gte(treatments.date, startOfToday))),
+
+    db.select({
+        date: sql<string>`DATE(${treatments.date})`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(treatments)
+      .where(and(eq(treatments.userId, userId), gte(treatments.date, startOfWeek)))
+      .groupBy(sql`DATE(${treatments.date})`)
+      .orderBy(sql`DATE(${treatments.date})`),
+
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(treatments)
+      .where(and(eq(treatments.userId, userId), gte(treatments.date, startOfMonth))),
+
+    db.select({
+        id: treatments.id,
+        customerName: treatments.customerName,
+        customerType: treatments.customerType,
+        orderNo: treatments.orderNo,
+        date: treatments.date,
+        facialTypeId: treatments.facialTypeId,
+      })
+      .from(treatments)
+      .where(eq(treatments.userId, userId))
+      .orderBy(desc(treatments.createdAt))
+      .limit(5),
+
+    db.select().from(facialTypes),
+
+    db.select({
+        facialTypeId: treatments.facialTypeId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(treatments)
+      .where(and(eq(treatments.userId, userId), gte(treatments.date, startOfToday)))
+      .groupBy(treatments.facialTypeId)
+      .orderBy(desc(sql`count(*)`))
+      .limit(1),
+
+    db.select()
+      .from(monthlyTargets)
+      .where(and(
+        eq(monthlyTargets.userId, userId),
+        eq(monthlyTargets.month, now.getMonth() + 1),
+        eq(monthlyTargets.year, now.getFullYear())
+      ))
+      .limit(1),
+
+    db.select({ dayOfWeek: offDays.dayOfWeek })
+      .from(offDays)
+      .where(eq(offDays.userId, userId)),
+  ]);
+
+  const facialMap = Object.fromEntries(allFacialTypes.map((f) => [f.id, f.name]));
+  const offDaySet = new Set(userOffDays.map((d) => d.dayOfWeek));
+
+  const chartData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const key = d.toISOString().split("T")[0];
+    const found = weekTreatments.find((w) => w.date === key);
+    return {
+      date: key,
+      count: found?.count ?? 0,
+      label: d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric" }),
+      isOffDay: offDaySet.has(d.getDay()),
+    };
+  });
+
+  const recentWithNames = recentTreatments.map((t) => ({
+    ...t,
+    facialTypeName: facialMap[t.facialTypeId] ?? "—",
+    date: t.date.toISOString(),
+  }));
+
+  const monthCount = monthTreatments[0]?.count ?? 0;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <DashboardClient
+      userName={session.user.name ?? ""}
+      stats={{
+        todayCount: todayTreatments[0]?.count ?? 0,
+        monthCount,
+        targetPatients: monthTarget[0]?.targetPatients ?? null,
+        topFacialToday: topFacialToday[0]
+          ? (facialMap[topFacialToday[0].facialTypeId] ?? "—")
+          : "—",
+        weekTotal: weekTreatments.reduce((s, w) => s + w.count, 0),
+      }}
+      chartData={chartData}
+      recentTreatments={recentWithNames}
+    />
   );
 }
