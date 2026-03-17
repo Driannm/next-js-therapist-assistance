@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { desc, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { RecapClient } from "@/components/RecapClient";
 
 export default async function RekapPage() {
@@ -13,6 +14,9 @@ export default async function RekapPage() {
 
   const userId = Number(session.user.id);
 
+  // ✅ alias untuk next appointment (facial berikutnya)
+  const nextFacial = alias(facialTypes, "next_facial");
+
   const data = await db
     .select({
       id: treatments.id,
@@ -21,20 +25,19 @@ export default async function RekapPage() {
       customerName: treatments.customerName,
       customerType: treatments.customerType,
       facialTypeName: facialTypes.name,
-      nextAppointment: facialTypes.name,
+      nextAppointment: nextFacial.name, // ✅ FIX
     })
     .from(treatments)
     .leftJoin(facialTypes, eq(treatments.facialTypeId, facialTypes.id))
-    .where(eq(treatments.userId, userId))           // ← hanya data milik user ini
+    .leftJoin(nextFacial, eq(treatments.nextAppointmentId, nextFacial.id)) // ✅ JOIN KEDUA
+    .where(eq(treatments.userId, userId))
     .orderBy(desc(treatments.createdAt));
 
-  // Serialize dates ke string supaya bisa di-pass ke Client Component
+  // ✅ serialize date
   const serialized = data.map((row) => ({
     ...row,
     date: row.date.toISOString(),
-    nextAppointment: row.nextAppointment
-      ? row.nextAppointment
-      : null,
+    nextAppointment: row.nextAppointment ?? null,
   }));
 
   return <RecapClient initialData={serialized} />;
