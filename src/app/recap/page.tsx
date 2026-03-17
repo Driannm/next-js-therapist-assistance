@@ -21,7 +21,7 @@ export default async function RekapPage() {
       customerName: treatments.customerName,
       customerType: treatments.customerType,
       facialTypeName: facialTypes.name,
-      nextAppointment: treatments.nextAppointment,
+      nextAppointment: facialTypes.name,
     })
     .from(treatments)
     .leftJoin(facialTypes, eq(treatments.facialTypeId, facialTypes.id))
@@ -33,7 +33,7 @@ export default async function RekapPage() {
     ...row,
     date: row.date.toISOString(),
     nextAppointment: row.nextAppointment
-      ? row.nextAppointment.toISOString()
+      ? row.nextAppointment
       : null,
   }));
 
