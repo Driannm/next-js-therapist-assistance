@@ -1,6 +1,6 @@
-// src/app/pengaturan/page.tsx
+// src/app/settings/page.tsx
 import { db } from "@/db";
-import { monthlyTargets, offDays } from "@/db/schema";
+import { monthlyTargets, offDates } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -8,14 +8,14 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { PengaturanClient } from "@/components/SettingClient";
 
-export default async function PengaturanPage() {
+export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
   const userId = Number(session.user.id);
   const now = new Date();
 
-  const [currentTarget, currentOffDays] = await Promise.all([
+  const [currentTarget, currentOffDatesList] = await Promise.all([
     db
       .select()
       .from(monthlyTargets)
@@ -29,12 +29,10 @@ export default async function PengaturanPage() {
       .limit(1),
 
     db
-      .select({ dayOfWeek: offDays.dayOfWeek })
-      .from(offDays)
-      .where(eq(offDays.userId, userId)),
+      .select({ date: offDates.date })
+      .from(offDates)
+      .where(eq(offDates.userId, userId)),
   ]);
-
-  // ── Server Actions ───────────────────────────────────────────
 
   async function saveTarget(formData: FormData) {
     "use server";
@@ -48,7 +46,6 @@ export default async function PengaturanPage() {
     const month = now.getMonth() + 1;
     const year = now.getFullYear();
 
-    // Upsert: update kalau sudah ada, insert kalau belum
     const existing = await db
       .select()
       .from(monthlyTargets)
@@ -67,15 +64,10 @@ export default async function PengaturanPage() {
         .set({ targetPatients: target })
         .where(eq(monthlyTargets.id, existing[0].id));
     } else {
-      await db.insert(monthlyTargets).values({
-        userId: uid,
-        month,
-        year,
-        targetPatients: target,
-      });
+      await db.insert(monthlyTargets).values({ userId: uid, month, year, targetPatients: target });
     }
 
-    revalidatePath("/pengaturan");
+    revalidatePath("/settings");
     revalidatePath("/");
   }
 
@@ -85,26 +77,27 @@ export default async function PengaturanPage() {
     if (!session) return;
     const uid = Number(session.user.id);
 
-    // Ambil semua day values yang dicentang (0–6)
-    const selected = formData.getAll("offDay").map(Number);
+    // Array of "YYYY-MM-DD" strings
+    const selected = formData.getAll("offDate").map(String).filter(Boolean);
 
-    // Delete semua off days user ini lalu insert yang baru
-    await db.delete(offDays).where(eq(offDays.userId, uid));
+    // Delete all existing, then insert new ones
+    await db.delete(offDates).where(eq(offDates.userId, uid));
 
     if (selected.length > 0) {
-      await db.insert(offDays).values(
-        selected.map((day) => ({ userId: uid, dayOfWeek: day }))
-      );
+      // Insert one by one to avoid unique constraint conflicts
+      for (const dateStr of selected) {
+        await db.insert(offDates).values({ userId: uid, date: dateStr });
+      }
     }
 
-    revalidatePath("/pengaturan");
+    revalidatePath("/settings");
     revalidatePath("/");
   }
 
   return (
     <PengaturanClient
       currentTarget={currentTarget[0]?.targetPatients ?? null}
-      currentOffDays={currentOffDays.map((d) => d.dayOfWeek)}
+      currentOffDates={currentOffDatesList.map((d) => String(d.date))}
       monthLabel={now.toLocaleDateString("id-ID", { month: "long", year: "numeric" })}
       saveTarget={saveTarget}
       saveOffDays={saveOffDays}
