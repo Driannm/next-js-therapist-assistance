@@ -11,7 +11,6 @@ export default async function InputPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const userId = Number(session.user.id);
   const facials = await db.select().from(facialTypes);
 
   async function saveTreatment(formData: FormData) {
@@ -21,6 +20,8 @@ export default async function InputPage() {
     if (!session) throw new Error("Unauthorized");
 
     const uid = Number(session.user.id);
+    const nextIdRaw = formData.get("nextTreatmentId");
+    const nextAppointmentId = nextIdRaw ? Number(nextIdRaw) : null;
 
     await db.insert(treatments).values({
       userId: uid,
@@ -28,15 +29,12 @@ export default async function InputPage() {
       facialTypeId: Number(formData.get("facialTypeId")),
       orderNo: formData.get("orderNo") as string,
       customerType: formData.get("customerType") as "External Client" | "ZEP",
-      nextAppointment: formData.get("nextTreatmentId")
-        ? new Date() // placeholder — ganti dengan logic next appointment sesuai kebutuhan
-        : null,
+      nextAppointmentId,
       therapistName: session.user.name ?? "Therapist",
-      date: new Date(),
     });
 
     revalidatePath("/");
-    revalidatePath("/rekap");
+    revalidatePath("/recap");
   }
 
   return <FormEntry action={saveTreatment} facials={facials} />;
