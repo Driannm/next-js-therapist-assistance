@@ -4,6 +4,7 @@ import {
   serial,
   text,
   timestamp,
+  date,          // <-- TAMBAHKAN INI UNTUK TIPE TANGGAL (YYYY-MM-DD)
   varchar,
   integer,
   pgEnum,
@@ -55,21 +56,21 @@ export const monthlyTargets = pgTable(
   })
 );
 
-// ─── OFF DAYS ──────────────────────────────────────────────────
-// Hari libur mingguan per user (0 = Minggu, 1 = Senin, ..., 6 = Sabtu)
+// ─── OFF DATES (DULU OFF DAYS) ─────────────────────────────────
+// Hari libur spesifik per user (Menyimpan format 'YYYY-MM-DD')
 
-export const offDays = pgTable(
-  "off_days",
+export const offDates = pgTable(
+  "off_dates",
   {
     id: serial("id").primaryKey(),
     userId: integer("user_id").references(() => users.id).notNull(),
-    dayOfWeek: integer("day_of_week").notNull(), // 0–6
+    date: date("date").notNull(), // <-- BERUBAH JADI DATE
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
-    userDayUnique: uniqueIndex("user_day_unique").on(
+    userDateUnique: uniqueIndex("user_date_unique").on(
       table.userId,
-      table.dayOfWeek
+      table.date // <-- BERUBAH, pastikan user tidak bisa dobel input tanggal yang sama
     ),
   })
 );
