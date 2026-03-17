@@ -1,3 +1,4 @@
+// src/app/rekap/page.tsx
 import { db } from "@/db";
 import { treatments, facialTypes } from "@/db/schema";
 import { redirect } from "next/navigation";
@@ -9,12 +10,9 @@ import { RecapClient } from "@/components/RecapClient";
 
 export default async function RekapPage() {
   const session = await getServerSession(authOptions);
-
   if (!session) redirect("/login");
 
   const userId = Number(session.user.id);
-
-  // ✅ alias untuk next appointment (facial berikutnya)
   const nextFacial = alias(facialTypes, "next_facial");
 
   const data = await db
@@ -25,18 +23,20 @@ export default async function RekapPage() {
       customerName: treatments.customerName,
       customerType: treatments.customerType,
       facialTypeName: facialTypes.name,
-      nextAppointment: nextFacial.name, // ✅ FIX
+      nextAppointment: nextFacial.name,
     })
     .from(treatments)
     .leftJoin(facialTypes, eq(treatments.facialTypeId, facialTypes.id))
-    .leftJoin(nextFacial, eq(treatments.nextAppointmentId, nextFacial.id)) // ✅ JOIN KEDUA
+    .leftJoin(nextFacial, eq(treatments.nextAppointmentId, nextFacial.id))
     .where(eq(treatments.userId, userId))
     .orderBy(desc(treatments.createdAt));
 
-  // ✅ serialize date
   const serialized = data.map((row) => ({
     ...row,
-    date: row.date.toISOString(),
+    // Handle both Date object and string from Drizzle
+    date: row.date instanceof Date
+      ? row.date.toISOString()
+      : new Date(row.date as string).toISOString(),
     nextAppointment: row.nextAppointment ?? null,
   }));
 

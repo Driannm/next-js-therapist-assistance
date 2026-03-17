@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import {
-  ArrowLeft01Icon,
   DashboardSquare01Icon,
   ListViewIcon,
   FilterIcon,
+  ArrowLeft01Icon,
 } from "hugeicons-react";
 
 type TreatmentData = {
@@ -16,7 +16,7 @@ type TreatmentData = {
   customerName: string;
   customerType: string;
   facialTypeName: string | null;
-  nextAppointment: string | null; // ✅ nama facial berikutnya
+  nextAppointment: string | null;
 };
 
 export function RecapClient({ initialData }: { initialData: TreatmentData[] }) {
@@ -24,158 +24,203 @@ export function RecapClient({ initialData }: { initialData: TreatmentData[] }) {
   const [filter, setFilter] = useState<"all" | "today" | "yesterday">("all");
 
   const filteredData = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
 
     return initialData.filter((row) => {
       if (filter === "all") return true;
-
-      const rowDate = new Date(row.date);
-      rowDate.setHours(0, 0, 0, 0);
-
+      const rowDate = new Date(row.date); rowDate.setHours(0, 0, 0, 0);
       if (filter === "today") return rowDate.getTime() === today.getTime();
-      if (filter === "yesterday")
-        return rowDate.getTime() === yesterday.getTime();
-
+      if (filter === "yesterday") return rowDate.getTime() === yesterday.getTime();
       return true;
     });
   }, [initialData, filter]);
 
+  const filters = [
+    { key: "all", label: "Semua" },
+    { key: "today", label: "Hari Ini" },
+    { key: "yesterday", label: "Kemarin" },
+  ] as const;
+
   return (
-    <main className="min-h-screen bg-[#183528] px-4 pt-8 pb-28 flex flex-col items-center">
-      
-      {/* HEADER */}
-      <div className="w-full max-w-4xl mb-6">
-        <div className="flex items-end justify-between">
+    <main className="min-h-screen bg-[#183528] px-4 pt-8 pb-28 font-[family-name:var(--font-geist-sans)]">
+      <div className="max-w-2xl mx-auto space-y-5">
+
+        {/* Header */}
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#F4F3ED]">
-              Daftar Treatment
-            </h1>
-            <p className="text-sm text-[#F4F3ED]/70 mt-1">
-              Menampilkan {filteredData.length} data
+            <p className="text-[10px] text-[#F4F3ED]/60 font-bold uppercase tracking-[0.2em] mb-1">
+              Rekap Data
+            </p>
+            <h1 className="text-2xl font-bold text-[#F4F3ED]">Daftar Treatment</h1>
+            <p className="text-sm text-[#F4F3ED]/60 mt-1">
+              {filteredData.length} treatment ditemukan
             </p>
           </div>
-
-          <span className="text-xs font-semibold text-[#F4F3ED]/70 text-right">
-            {new Date().toLocaleDateString("id-ID", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}
+          <span className="text-xs font-semibold text-[#F4F3ED]/50 text-right pt-1 capitalize">
+            {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}
           </span>
         </div>
-      </div>
 
-      {/* FILTER */}
-      <div className="w-full max-w-4xl mb-6 flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex gap-2 items-center overflow-x-auto">
-          <FilterIcon size={20} className="text-[#F4F3ED]" />
+        {/* Filter + View toggle */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Filter pills */}
+          <div className="flex items-center gap-2">
+            <FilterIcon size={16} className="text-[#F4F3ED]/50 flex-shrink-0" />
+            <div className="flex gap-1.5">
+              {filters.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-150 ${
+                    filter === f.key
+                      ? "bg-[#F4F3ED] text-[#1D4130]"
+                      : "text-[#F4F3ED]/60 border border-[#F4F3ED]/20 hover:border-[#F4F3ED]/40"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {(["all", "today", "yesterday"] as const).map((f) => (
+          {/* View toggle */}
+          <div className="flex gap-0.5 bg-[#1D4130] p-1 rounded-full flex-shrink-0">
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-full text-xs font-bold ${
-                filter === f
-                  ? "bg-[#F4F3ED] text-[#1D4130]"
-                  : "text-[#F4F3ED]/70 border border-[#F4F3ED]/30"
+              onClick={() => setViewMode("card")}
+              className={`p-2 rounded-full transition-all duration-150 ${
+                viewMode === "card" ? "bg-[#F4F3ED] text-[#1D4130]" : "text-[#F4F3ED]/60"
               }`}
             >
-              {f === "all"
-                ? "Semua Data"
-                : f === "today"
-                ? "Hari Ini"
-                : "Kemarin"}
+              <DashboardSquare01Icon size={16} />
             </button>
-          ))}
+            <button
+              onClick={() => setViewMode("table")}
+              className={`p-2 rounded-full transition-all duration-150 ${
+                viewMode === "table" ? "bg-[#F4F3ED] text-[#1D4130]" : "text-[#F4F3ED]/60"
+              }`}
+            >
+              <ListViewIcon size={16} />
+            </button>
+          </div>
         </div>
 
-        {/* VIEW TOGGLE */}
-        <div className="flex gap-1 bg-[#1D4130] p-1 rounded-full">
-          <button
-            onClick={() => setViewMode("card")}
-            className={viewMode === "card" ? "bg-white p-2 rounded-full" : "p-2"}
-          >
-            <DashboardSquare01Icon size={18} />
-          </button>
-
-          <button
-            onClick={() => setViewMode("table")}
-            className={viewMode === "table" ? "bg-white p-2 rounded-full" : "p-2"}
-          >
-            <ListViewIcon size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* CONTENT */}
-      <div className="w-full max-w-4xl">
-
+        {/* Empty state */}
         {filteredData.length === 0 && (
-          <div className="bg-white rounded-xl p-6 text-center">
-            Belum ada data
+          <div className="bg-[#F4F3ED] rounded-[2rem] px-6 py-14 text-center shadow-xl">
+            <p className="text-3xl mb-3">🍃</p>
+            <p className="text-sm font-bold text-gray-500">Belum ada data treatment</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {filter !== "all" ? "Coba ganti filter ke Semua Data" : "Tambahkan treatment pertama kamu"}
+            </p>
           </div>
         )}
 
-        {/* CARD */}
+        {/* Card view */}
         {viewMode === "card" && filteredData.length > 0 && (
-          <div className="grid gap-4">
-            {filteredData.map((row) => (
-              <div key={row.id} className="bg-white p-4 rounded-xl">
-                <p className="font-bold">{row.customerName}</p>
-                <p className="text-xs">#{row.orderNo}</p>
+          <div className="space-y-3">
+            {filteredData.map((row) => {
+              const isZEP = row.customerType === "ZEP";
+              const time = new Date(row.date).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+              const dateStr = new Date(row.date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
-                <p>
-                  Tanggal:{" "}
-                  {new Date(row.date).toLocaleDateString("id-ID")}
-                </p>
+              return (
+                <div key={row.id} className="bg-[#F4F3ED] rounded-[1.5rem] p-4 shadow-lg border border-white/50">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-[#183528] flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-sm font-bold text-[#F4F3ED]">
+                          {row.customerName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-gray-900 truncate">{row.customerName}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">#{row.orderNo}</p>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 border ${
+                      isZEP ? "bg-[#1D4130] text-[#F4F3ED] border-[#1D4130]" : "bg-white text-[#1D4130] border-gray-200"
+                    }`}>
+                      {row.customerType}
+                    </span>
+                  </div>
 
-                <p>Facial: {row.facialTypeName ?? "—"}</p>
+                  <div className="h-px bg-gray-200 mb-3" />
 
-                <p>
-                  Next Treatment: {row.nextAppointment ?? "—"}
-                </p>
-              </div>
-            ))}
+                  <div className="grid grid-cols-2 gap-y-2.5 gap-x-4">
+                    <DataItem label="Tanggal" value={`${dateStr}, ${time}`} className="col-span-2" />
+                    <DataItem label="Treatment" value={row.facialTypeName ?? "—"} />
+                    <DataItem label="Next Treatment" value={row.nextAppointment ?? "—"} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* TABLE */}
+        {/* Table view */}
         {viewMode === "table" && filteredData.length > 0 && (
-          <table className="w-full bg-white rounded-xl overflow-hidden">
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Order</th>
-                <th>Nama</th>
-                <th>Facial</th>
-                <th>Next</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    {new Date(row.date).toLocaleDateString("id-ID")}
-                  </td>
-                  <td>#{row.orderNo}</td>
-                  <td>{row.customerName}</td>
-                  <td>{row.facialTypeName ?? "—"}</td>
-                  <td>{row.nextAppointment ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="bg-[#F4F3ED] rounded-[2rem] shadow-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    {["Tanggal", "Order", "Nama", "Tipe", "Treatment", "Next"].map((h) => (
+                      <th key={h} className="text-left px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((row, i) => {
+                    const isZEP = row.customerType === "ZEP";
+                    return (
+                      <tr key={row.id} className={`border-b border-gray-100 last:border-0 hover:bg-white/60 transition-colors ${i % 2 === 1 ? "bg-white/30" : ""}`}>
+                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                          {new Date(row.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-gray-500">#{row.orderNo}</td>
+                        <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{row.customerName}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[9px] font-bold px-2 py-1 rounded-full border ${
+                            isZEP ? "bg-[#1D4130] text-[#F4F3ED] border-[#1D4130]" : "bg-white text-[#1D4130] border-gray-200"
+                          }`}>
+                            {row.customerType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{row.facialTypeName ?? "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{row.nextAppointment ?? "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
-      </div>
 
-      {/* BACK */}
-      <div className="mt-8">
-        <Link href="/">Kembali</Link>
+        {/* Back */}
+        <div className="flex justify-center pt-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-sm font-bold text-[#F4F3ED]/60 hover:text-[#F4F3ED] transition-colors"
+          >
+            <ArrowLeft01Icon size={16} />
+            Kembali ke Dashboard
+          </Link>
+        </div>
+
       </div>
     </main>
+  );
+}
+
+function DataItem({ label, value, className = "" }: { label: string; value: string; className?: string }) {
+  return (
+    <div className={className}>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">{label}</p>
+      <p className="text-sm font-semibold text-gray-800 truncate">{value}</p>
+    </div>
   );
 }
