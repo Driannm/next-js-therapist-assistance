@@ -100,7 +100,7 @@ export function RecapClient({ initialData }: { initialData: TreatmentData[] }) {
                 : "text-[#F4F3ED]/70 hover:text-[#F4F3ED]"
             }`}
           >
-            <DashboardSquare01Icon size={18} variant={viewMode === "card" ? "solid" : "stroke"} />
+            <DashboardSquare01Icon size={18}/>
           </button>
 
           <button
@@ -111,7 +111,7 @@ export function RecapClient({ initialData }: { initialData: TreatmentData[] }) {
                 : "text-[#F4F3ED]/70 hover:text-[#F4F3ED]"
             }`}
           >
-            <ListViewIcon size={18} variant={viewMode === "table" ? "solid" : "stroke"} />
+            <ListViewIcon size={18} />
           </button>
         </div>
       </div>
