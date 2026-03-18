@@ -5,13 +5,23 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { eq } from "drizzle-orm";
 import { FormEntry } from "@/components/Form/FormEntry";
 
 export default async function InputPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const facials = await db.select().from(facialTypes);
+  const userId = Number(session.user.id);
+
+  const [facials, existingOrders] = await Promise.all([
+    db.select().from(facialTypes),
+    db.select({ orderNo: treatments.orderNo })
+      .from(treatments)
+      .where(eq(treatments.userId, userId)),
+  ]);
+
+  const existingOrderNos = existingOrders.map((o) => o.orderNo);
 
   async function saveTreatment(formData: FormData) {
     "use server";
@@ -22,7 +32,6 @@ export default async function InputPage() {
     const uid = Number(session.user.id);
     const nextIdRaw = formData.get("nextTreatmentId");
     const nextAppointmentId = nextIdRaw ? Number(nextIdRaw) : null;
-
     const dateRaw = formData.get("treatmentDate") as string | null;
     const date = dateRaw ? new Date(dateRaw) : new Date();
 
@@ -41,5 +50,11 @@ export default async function InputPage() {
     revalidatePath("/rekap");
   }
 
-  return <FormEntry action={saveTreatment} facials={facials} />;
+  return (
+    <FormEntry
+      action={saveTreatment}
+      facials={facials}
+      existingOrderNos={existingOrderNos}
+    />
+  );
 }
