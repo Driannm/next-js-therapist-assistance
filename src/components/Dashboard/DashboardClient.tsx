@@ -104,10 +104,7 @@ export function DashboardClient({
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Grafik Treatment</p>
             <p className="text-base font-bold text-gray-900 mt-1">Minggu Ini</p>
           </div>
-          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
-            <SparklesIcon size={14} className="text-[#1D4130]" />
-            <span className="text-xs font-bold text-[#1D4130]">{stats.weekTotal} total</span>
-          </div>
+
         </div>
 
         <div className="flex items-center gap-3 mb-6 px-1">
@@ -163,7 +160,7 @@ export function DashboardClient({
             <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-gray-500 truncate">Customer Terbaru</p>
             <p className="text-sm sm:text-base font-bold text-gray-900 mt-1 truncate">5 Treatment Terakhir</p>
           </div>
-          <Link href="/rekap" className="flex items-center gap-1 text-xs font-bold text-[#1D4130] hover:underline underline-offset-2 transition-colors flex-shrink-0 whitespace-nowrap bg-white/50 px-3 py-1.5 rounded-full">
+          <Link href="/recap" className="flex items-center gap-1 text-xs font-bold text-[#1D4130] hover:underline underline-offset-2 transition-colors flex-shrink-0 whitespace-nowrap bg-white/50 px-3 py-1.5 rounded-full">
             Lihat semua <ArrowRight01Icon size={14} />
           </Link>
         </div>

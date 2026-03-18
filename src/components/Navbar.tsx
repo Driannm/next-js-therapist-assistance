@@ -80,21 +80,13 @@ export function Navbar({ userName }: { userName?: string | null }) {
                 {/* Menu */}
                 <div className="p-1.5 space-y-0.5">
                 <Link
-                  href="/"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-white transition-colors duration-150"
-                >
-                  <HugeiconsIcon
-                    icon={UserCircleIcon}
-                    size={16}
-                    className="text-gray-400"
-                    strokeWidth={2}
-                  />
-                  Profile
-                  <span className="absolute right-3 bg-amber-100 text-amber-600 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-200 tracking-wide">
-                    Coming Soon
-                  </span>
-                </Link>
+                    href="/profile"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-white transition-colors duration-150"
+                  >
+                    <HugeiconsIcon icon={UserCircleIcon} size={16} className="text-gray-400" strokeWidth={2} />
+                    Profil Saya
+                  </Link>
               </div>
 
                 {/* Logout */}
