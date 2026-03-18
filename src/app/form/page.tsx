@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { FormEntry } from "@/components/FormEntry";
+import { FormEntry } from "@/components/Form/FormEntry";
 
 export default async function InputPage() {
   const session = await getServerSession(authOptions);
@@ -23,6 +23,10 @@ export default async function InputPage() {
     const nextIdRaw = formData.get("nextTreatmentId");
     const nextAppointmentId = nextIdRaw ? Number(nextIdRaw) : null;
 
+    // Use user-selected datetime, fall back to now if missing/invalid
+    const dateRaw = formData.get("treatmentDate") as string | null;
+    const date = dateRaw ? new Date(dateRaw) : new Date();
+
     await db.insert(treatments).values({
       userId: uid,
       customerName: formData.get("customerName") as string,
@@ -31,10 +35,11 @@ export default async function InputPage() {
       customerType: formData.get("customerType") as "External Client" | "ZEP",
       nextAppointmentId,
       therapistName: session.user.name ?? "Therapist",
+      date,
     });
 
     revalidatePath("/");
-    revalidatePath("/recap");
+    revalidatePath("/rekap");
   }
 
   return <FormEntry action={saveTreatment} facials={facials} />;
