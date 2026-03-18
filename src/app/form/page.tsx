@@ -23,7 +23,6 @@ export default async function InputPage() {
     const nextIdRaw = formData.get("nextTreatmentId");
     const nextAppointmentId = nextIdRaw ? Number(nextIdRaw) : null;
 
-    // Use user-selected datetime, fall back to now if missing/invalid
     const dateRaw = formData.get("treatmentDate") as string | null;
     const date = dateRaw ? new Date(dateRaw) : new Date();
 
