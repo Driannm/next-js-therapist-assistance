@@ -24,6 +24,7 @@ export default async function RekapPage() {
       customerType: treatments.customerType,
       facialTypeName: facialTypes.name,
       nextAppointment: nextFacial.name,
+      therapistName: treatments.therapistName,
     })
     .from(treatments)
     .leftJoin(facialTypes, eq(treatments.facialTypeId, facialTypes.id))
@@ -33,7 +34,6 @@ export default async function RekapPage() {
 
   const serialized = data.map((row) => ({
     ...row,
-    // Handle both Date object and string from Drizzle
     date: row.date instanceof Date
       ? row.date.toISOString()
       : new Date(row.date as string).toISOString(),
